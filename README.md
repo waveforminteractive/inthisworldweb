@@ -4,11 +4,9 @@
 
 ## Demo
 
-https://github.com/user-attachments/assets placeholder — see `render.mp4` in this repo.
+![In This World — rendered demo](preview.gif)
 
-<video src="render.mp4" controls playsinline width="100%"></video>
-
-> The clip above was rendered entirely inside the engine: 3 scenes, multiple camera shots, offline TTS narration, bundled music, exported with the bundled FFmpeg pipeline on a 2 GB RAM laptop.
+> Full-quality video: [`render.mp4`](render.mp4) (MP4, ~2.3 MB). The clip above was rendered entirely inside the engine: 3 scenes, multiple camera shots, offline TTS narration, bundled music, exported with the bundled FFmpeg pipeline on a 2 GB RAM laptop.
 
 ## Features
 
