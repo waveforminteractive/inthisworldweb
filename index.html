@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#07090e" />
+<meta name="color-scheme" content="dark" />
+<title>In This World — Offline Cinematic Story Studio</title>
+<meta name="description" content="In This World is a fully offline cinematic story-video studio. Build scenes, animate characters, narrate with local TTS, and export MP4 — no cloud, no account." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236c7bff'/%3E%3Cpath d='M8 10h16M8 16h16M8 22h10' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='22' r='3' fill='white'/%3E%3C/svg%3E" />
+<meta name="description" content="In This World is a fully offline cinematic story-video studio. Build scenes, animate characters, narrate with local TTS, and export MP4 — no cloud, no account." />
+<style>
+  :root {
+    --bg: #07090e;
+    --bg-2: #0c1018;
+    --panel: #111624;
+    --line: rgba(255,255,255,0.08);
+    --text: #eef1f7;
+    --muted: #9aa3b8;
+    --accent: #6c7bff;
+    --accent-2: #9b6bff;
+    --gold: #ffd166;
+    --green: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .hero {
+    position: relative;
+    height: 100vh;
+    min-height: 640px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 30%, #1a2030 0%, #07090e 70%);
+  }
+  #hero-canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .hero-overlay {
+    position: relative; z-index: 2;
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 24px 32px;
+    pointer-events: none;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    pointer-events: auto;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; letter-spacing: 0.02em;
+  }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    box-shadow: 0 8px 24px rgba(108,123,255,0.35);
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav {
+    display: flex; gap: 24px; color: var(--muted); font-size: 14px;
+  }
+  .nav a:hover { color: var(--text); }
+  .hero-center {
+    display: flex; flex-direction: column; justify-content: center;
+    max-width: 720px;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600;
+  }
+  .eyebrow::before {
+    content: ""; width: 28px; height: 1px; background: var(--accent);
+  }
+  h1 {
+    font-size: clamp(40px, 7vw, 84px);
+    line-height: 0.95;
+    margin: 18px 0 16px;
+    letter-spacing: -0.03em;
+    background: linear-gradient(180deg, #ffffff 0%, #b6bce0 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .tagline {
+    font-size: clamp(16px, 2vw, 20px);
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.5;
+  }
+  .cta-row {
+    display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap;
+    pointer-events: auto;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 20px; border-radius: 10px;
+    font-weight: 600; font-size: 14px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  }
+  .btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.08); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+    box-shadow: 0 10px 30px rgba(108,123,255,0.35);
+  }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .coming-soon {
+    font-size: 11px; padding: 3px 8px; border-radius: 999px;
+    background: rgba(255,209,102,0.15); color: var(--gold);
+    border: 1px solid rgba(255,209,102,0.3);
+    margin-left: 6px;
+  }
+  .hero-foot {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    color: var(--muted); font-size: 12px;
+    pointer-events: auto;
+  }
+  .hero-foot .hint { display: flex; gap: 18px; }
+  .hero-foot .hint span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+  section { padding: 96px 32px; max-width: 1180px; margin: 0 auto; }
+  .section-head { max-width: 640px; margin-bottom: 56px; }
+  .section-head h2 {
+    font-size: clamp(28px, 4vw, 44px);
+    margin: 0 0 12px; letter-spacing: -0.02em;
+  }
+  .section-head p { color: var(--muted); font-size: 17px; line-height: 1.55; margin: 0; }
+  .features {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+    transition: border-color 150ms ease, transform 150ms ease;
+  }
+  .card:hover { border-color: rgba(108,123,255,0.35); transform: translateY(-2px); }
+  .card .icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: grid; place-items: center;
+    background: rgba(108,123,255,0.12); color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+  .badge {
+    display: inline-block; font-size: 10.5px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--gold);
+    border: 1px solid rgba(255,209,102,0.3); border-radius: 999px;
+    padding: 3px 8px; margin-bottom: 10px;
+  }
+
+  .showcase {
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center;
+  }
+  @media (max-width: 860px) { .showcase { grid-template-columns: 1fr; } }
+  .showcase video {
+    width: 100%; border-radius: 14px;
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  }
+  .showcase h3 { font-size: 26px; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .showcase p { color: var(--muted); line-height: 1.6; }
+  .showcase ul { list-style: none; padding: 0; margin: 18px 0 0; }
+  .showcase li {
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+    color: var(--muted); font-size: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .showcase li::before { content: "✓"; color: var(--green); font-weight: 700; }
+
+  .specs {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .spec {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 20px;
+  }
+  .spec .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .spec .v { margin-top: 6px; font-size: 15px; font-weight: 600; }
+
+  .download-cta {
+    text-align: center; padding: 80px 32px;
+    background: radial-gradient(circle at 50% 50%, rgba(108,123,255,0.12), transparent 60%);
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  }
+  .download-cta h2 { font-size: clamp(30px, 4vw, 46px); margin: 0 0 12px; letter-spacing: -0.02em; }
+  .download-cta p { color: var(--muted); max-width: 560px; margin: 0 auto 28px; line-height: 1.55; }
+
+  footer {
+    padding: 40px 32px; color: var(--muted); font-size: 13px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    max-width: 1180px; margin: 0 auto;
+  }
+  footer .links { display: flex; gap: 18px; }
+  footer a:hover { color: var(--text); }
+
+  .unmute {
+    position: fixed; bottom: 18px; right: 18px; z-index: 5;
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 860px) {
+    .hero-overlay { padding: 18px 20px; }
+    .nav { display: none; }
+    .hero-foot { flex-direction: column; align-items: flex-start; gap: 10px; font-size: 11.5px; }
+    .hero-foot .hint { flex-wrap: wrap; gap: 10px; }
+    section { padding: 72px 20px; }
+    .section-head { margin-bottom: 36px; }
+    .showcase { gap: 28px; }
+    .download-cta { padding: 60px 20px; }
+    footer { padding: 32px 20px; }
+  }
+  @media (max-width: 520px) {
+    .brand { font-size: 14px; }
+    .brand-mark { width: 30px; height: 30px; }
+    h1 { font-size: clamp(34px, 11vw, 48px); }
+    .tagline { font-size: 15px; }
+    .cta-row .btn { width: 100%; justify-content: center; }
+    .features { grid-template-columns: 1fr; }
+    .specs { grid-template-columns: 1fr 1fr; }
+    .spec { padding: 14px 16px; }
+    .download-cta .cta-row .btn { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card, .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-overlay">
+      <div class="topbar">
+        <div class="brand">
+          <div class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2.5" fill="white" stroke="none"/></svg>
+          </div>
+          In This World
+        </div>
+        <nav class="nav">
+          <a href="#features">Features</a>
+          <a href="#demo">Demo</a>
+          <a href="#specs">Specs</a>
+          <a href="#download">Download</a>
+        </nav>
+      </div>
+      <div class="hero-center">
+        <span class="eyebrow">Offline · Local-first · Cinematic</span>
+        <h1>Build stories that feel like a world.</h1>
+        <p class="tagline">A desktop studio for crafting cinematic story videos — scenes, characters, cameras, narration and music — entirely on your machine. No account, no cloud, no telemetry.</p>
+        <div class="cta-row">
+          <button class="btn primary" id="watch-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            Watch the render
+          </button>
+          <a class="btn" href="#download">
+            Download
+            <span class="coming-soon">Coming soon</span>
+          </a>
+        </div>
+      </div>
+      <div class="hero-foot">
+        <div class="hint">
+          <span><span class="dot"></span> Fully offline core</span>
+          <span>·</span>
+          <span>Windows · macOS · Linux</span>
+          <span>·</span>
+          <span>MP4 export with bundled FFmpeg</span>
+        </div>
+        <div>Scroll to explore ↓</div>
+      </div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="section-head">
+      <span class="badge">What it does</span>
+      <h2>A complete studio, on your desk.</h2>
+      <p>Everything you need to go from a blank stage to a finished story video — built for creators who want control and privacy.</p>
+    </div>
+    <div class="features">
+      <div class="card"><div class="icon">🎬</div><h3>Cinematic viewport</h3><p>Orbit, frame and preview camera shots. Transform characters and props with gizmos, just like a real 3D editor.</p></div>
+      <div class="card"><div class="icon">🧍</div><h3>Cast & characters</h3><p>Built-in blocky characters and monsters, plus a character builder to color, shape and save your own cast.</p></div>
+      <div class="card"><div class="icon">🎙️</div><h3>Offline narration</h3><p>Local TTS voices (Piper when available, Windows SAPI otherwise) cached to disk. No cloud voices, ever.</p></div>
+      <div class="card"><div class="icon">🎵</div><h3>Music & SFX</h3><p>Bundled music tracks and sound effects, per-scene mixing, and ducking for narration.</p></div>
+      <div class="card"><div class="icon">🎞️</div><h3>Timeline & storyboard</h3><p>Drag-and-drop scenes, clips, shots and animations. Scrub the playhead across your whole story.</p></div>
+      <div class="card"><div class="icon">📤</div><h3>MP4 export</h3><p>Render frames locally and encode with bundled FFmpeg — H.264, AAC, faststart, optional subtitles.</p></div>
+      <div class="card"><div class="icon">🤖</div><h3>Optional Director AI</h3><p>Bring your own OpenAI-compatible endpoint for shot and scene suggestions. Disabled by default; key stays in OS secure storage.</p></div>
+      <div class="card"><div class="icon">🔒</div><h3>Private by design</h3><p>Core is 100% offline. No accounts, no telemetry, no CDN, no cloud. Your projects live in your userData folder.</p></div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="showcase">
+      <div>
+        <span class="badge">A real render</span>
+        <h3>Made entirely inside the engine.</h3>
+        <p>This clip was rendered with the built-in offline pipeline — characters, camera shots, narration and music, exported to MP4 on a modest machine.</p>
+        <ul>
+          <li>3 scenes, multiple camera shots</li>
+          <li>Offline TTS narration + bundled music</li>
+          <li>Exported with bundled FFmpeg (no install needed)</li>
+          <li>Ran on a 2 GB RAM laptop</li>
+        </ul>
+      </div>
+      <video src="render.mp4" controls playsinline preload="metadata"></video>
+    </div>
+  </section>
+
+  <section id="specs">
+    <div class="section-head">
+      <span class="badge">System</span>
+      <h2>Lightweight by intent.</h2>
+      <p>Built to run on modest hardware. No heavy runtime, no GPU required beyond WebGL for the viewport.</p>
+    </div>
+    <div class="specs">
+      <div class="spec"><div class="k">OS</div><div class="v">Windows · macOS · Linux</div></div>
+      <div class="spec"><div class="k">RAM</div><div class="v">2 GB minimum (4 GB recommended)</div></div>
+      <div class="spec"><div class="k">Storage</div><div class="v">~400 MB installed</div></div>
+      <div class="spec"><div class="k">GPU</div><div class="v">WebGL-capable (any modern)</div></div>
+      <div class="spec"><div class="k">Network</div><div class="v">Not required for core</div></div>
+      <div class="spec"><div class="k">Export</div><div class="v">MP4 · H.264 · AAC · SRT</div></div>
+    </div>
+  </section>
+
+  <div class="download-cta" id="download">
+    <h2>Download is coming soon.</h2>
+    <p>The first public build is on its way. Leave your curiosity here — the installer will land shortly, fully offline as always.</p>
+    <div class="cta-row" style="justify-content:center;">
+      <button class="btn primary" disabled>
+        Download for Windows
+        <span class="coming-soon">Coming soon</span>
+      </button>
+      <button class="btn" disabled>
+        Download for macOS
+        <span class="coming-soon">Coming soon</span>
+      </button>
+      <button class="btn" disabled>
+        Download for Linux
+        <span class="coming-soon">Coming soon</span>
+      </button>
+    </div>
+  </div>
+
+  <footer>
+    <div>© 2026 In This World · Local-first studio</div>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#demo">Demo</a>
+      <a href="#specs">Specs</a>
+    </div>
+  </footer>
+
+  <button class="btn unmute" id="unmute-btn" style="display:none;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM15.5 8.5a5 5 0 0 1 0 7"/></svg>
+    Enable sound
+  </button>
+
+  <script type="module">
+    import * as THREE from './lib/three.module.js';
+    import { OrbitControls } from './lib/OrbitControls.js';
+
+    const canvas = document.getElementById('hero-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x07090e, 18, 46);
+
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 200);
+    camera.position.set(7, 4.2, 9);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.07;
+    controls.enablePan = false;
+    controls.minDistance = 6;
+    controls.maxDistance = 16;
+    controls.target.set(0, 1.6, 0);
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.35;
+
+    // lights
+    scene.add(new THREE.AmbientLight(0x8fa3ff, 0.35));
+    const key = new THREE.DirectionalLight(0xffffff, 1.1);
+    key.position.set(6, 10, 4);
+    scene.add(key);
+    const rim = new THREE.PointLight(0x9b6bff, 1.4, 30);
+    rim.position.set(-6, 6, -4);
+    scene.add(rim);
+
+    // floor grid
+    const grid = new THREE.GridHelper(40, 40, 0x3a4260, 0x1a1f2e);
+    grid.position.y = -0.01;
+    (grid.material).transparent = true;
+    (grid.material).opacity = 0.45;
+    scene.add(grid);
+
+    // screen
+    const video = document.createElement('video');
+    video.src = 'render.mp4';
+    video.loop = true;
+    video.muted = false;
+    video.volume = 0.85;
+    video.playsInline = true;
+    video.autoplay = true;
+    const vtex = new THREE.VideoTexture(video);
+    vtex.colorSpace = THREE.SRGBColorSpace;
+    vtex.minFilter = THREE.LinearFilter;
+    vtex.magFilter = THREE.LinearFilter;
+    const screenMat = new THREE.MeshStandardMaterial({
+      map: vtex, emissive: 0xffffff, emissiveMap: vtex, emissiveIntensity: 0.85,
+      roughness: 0.25, metalness: 0.05,
+    });
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 4.05), screenMat);
+    screen.position.set(0, 2.2, 0);
+    scene.add(screen);
+
+    // bezel
+    const bezel = new THREE.Mesh(
+      new THREE.BoxGeometry(7.6, 4.45, 0.18),
+      new THREE.MeshStandardMaterial({ color: 0x141824, roughness: 0.6, metalness: 0.4 })
+    );
+    bezel.position.set(0, 2.2, -0.12);
+    scene.add(bezel);
+
+    // stand
+    const stand = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.22, 1.6, 24),
+      new THREE.MeshStandardMaterial({ color: 0x141824, roughness: 0.5, metalness: 0.5 })
+    );
+    stand.position.set(0, 0.8, -0.4);
+    scene.add(stand);
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.1, 1.1, 0.12, 48),
+      new THREE.MeshStandardMaterial({ color: 0x0e121c, roughness: 0.7, metalness: 0.3 })
+    );
+    base.position.set(0, 0.06, -0.4);
+    scene.add(base);
+
+    // particles
+    const pCount = window.innerWidth < 720 ? 220 : 600;
+    const pPos = new Float32Array(pCount * 3);
+    for (let i = 0; i < pCount; i++) {
+      pPos[i*3] = (Math.random() - 0.5) * 26;
+      pPos[i*3+1] = Math.random() * 12;
+      pPos[i*3+2] = (Math.random() - 0.5) * 26;
+    }
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    const pMat = new THREE.PointsMaterial({ color: 0x6c7bff, size: 0.06, transparent: true, opacity: 0.55, sizeAttenuation: true });
+    const points = new THREE.Points(pGeo, pMat);
+    scene.add(points);
+
+    function resize() {
+      const w = canvas.clientWidth || window.innerWidth;
+      const h = canvas.clientHeight || window.innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+      points.rotation.y = t * 0.05;
+      screen.position.y = 2.2 + Math.sin(t * 0.6) * 0.06;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // video autoplay handling
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {
+        const btn = document.getElementById('unmute-btn');
+        btn.style.display = 'inline-flex';
+      });
+    }
+    const demoVideo = document.querySelector('#demo video');
+    const watchBtn = document.getElementById('watch-btn');
+    watchBtn.addEventListener('click', () => {
+      if (demoVideo) demoVideo.pause();
+      video.muted = false;
+      video.currentTime = 0;
+      video.play().catch(() => {});
+      document.getElementById('unmute-btn').style.display = 'none';
+      window.scrollTo({ top: document.getElementById('demo').offsetTop - 40, behavior: 'smooth' });
+    });
+    if (demoVideo) {
+      demoVideo.addEventListener('play', () => { video.pause(); });
+      demoVideo.addEventListener('pause', () => { video.muted = false; video.play().catch(() => {}); });
+      demoVideo.addEventListener('ended', () => { video.muted = false; video.play().catch(() => {}); });
+    }
+    const unmuteBtn = document.getElementById('unmute-btn');
+    unmuteBtn.addEventListener('click', () => {
+      if (demoVideo) demoVideo.pause();
+      video.muted = false;
+      video.play().catch(() => {});
+      unmuteBtn.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
